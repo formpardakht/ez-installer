@@ -212,7 +212,7 @@ function install() {
 		json_response(['error' => 'اطلاعات دیتابیس اشتباه می باشد'], 422);
 	}
 
-	$file = file_get_contents('http://localhost/latest.zip', false);
+	$file = file_get_contents('https://formpardakht.com/latest.zip', false);
 	file_put_contents(__DIR__ . '/laetst.zip', $file);
 	$zip = new ZipArchive;
     if ($zip->open(__DIR__ . '/laetst.zip')) {
