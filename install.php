@@ -163,6 +163,7 @@ if(isset($_GET['action'])) {
 			methods: {
 				submitInstall() {
 					let _this = this;
+					_this.error = '';
 					_this.installing = true;
 					fetch('./install.php?action=install', {
 						method: 'POST',
@@ -173,7 +174,9 @@ if(isset($_GET['action'])) {
 						body: JSON.stringify(_this.install)
 					}).then((response) => {
 						if(response.status === 200) {
-							window.location.href = './complete-installation';
+							response.json().then((data) => {
+								window.location.href = data.complete_url;
+							});
 						}
 						if(response.status === 422) {
 							response.json().then((data) => {
@@ -209,7 +212,7 @@ function install() {
 		json_response(['error' => 'اطلاعات دیتابیس اشتباه می باشد'], 422);
 	}
 
-	$file = file_get_contents('https://formpardakht.com/latest.zip', false);
+	$file = file_get_contents('http://localhost/latest.zip', false);
 	file_put_contents(__DIR__ . '/laetst.zip', $file);
 	$zip = new ZipArchive;
     if ($zip->open(__DIR__ . '/laetst.zip')) {
@@ -217,17 +220,17 @@ function install() {
         $zip->close();
     }
     $env = file_get_contents(__DIR__ . '/core/.env.example');
-    $env .= str_replace('{SITE_URL}', $input['site_url'], $env);
-    $env .= str_replace('{DB_HOST}', $input['db_host'], $env);
-    $env .= str_replace('{DB_NAME}', $input['db_name'], $env);
-    $env .= str_replace('{DB_USERNAME}', $input['db_username'], $env);
-    $env .= str_replace('{DB_PASSWORD}', $input['db_password'], $env);
+    $env = str_replace('{SITE_URL}', $input['site_url'], $env);
+    $env = str_replace('{DB_HOST}', $input['db_host'], $env);
+    $env = str_replace('{DB_NAME}', $input['db_name'], $env);
+    $env = str_replace('{DB_USERNAME}', $input['db_username'], $env);
+    $env = str_replace('{DB_PASSWORD}', $input['db_password'], $env);
 
     file_put_contents(__DIR__ . '/core/.env', $env);
 
     unlink(__DIR__ . '/latest.zip');
 
-    json_response(['complete_url' => './complete'], 200);
+    json_response(['complete_url' => './install/complete-ez?' . http_build_query($input)], 200);
 }
 
 function connectToDB($host, $username, $password, $database) {
