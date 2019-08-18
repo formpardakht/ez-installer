@@ -1,3 +1,4 @@
+<?php error_reporting(E_ERROR | E_PARSE); ?>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -20,17 +21,19 @@
     <div class="columns">
       <div class="column col-3"></div>
       <div class="column col-6">
-        <form method="post">
+        <form method="post" id="form">
           <div class="card">
             <div class="card-header">
               <div class="card-title h5">نصب آسان</div>
             </div>
             <div class="card-body">
-                <?php
-                if (isset($_POST['submit'])) {
-                    install();
-                }
-                ?>
+              <div id="message">
+              <?php
+              if (isset($_POST['site_url'])) {
+                  install();
+              }
+              ?>
+              </div>
               <div class="columns mt-2">
                 <div class="column col-lg-6">
                   <div class="form-group">
@@ -89,7 +92,7 @@
               </div>
             </div>
             <div class="card-footer">
-              <button type="submit" class="btn btn-primary" name="submit">شروع نصب</button>
+              <button id="btn-submit" type="submit" class="btn btn-primary" name="install" onclick="submitForm()">شروع نصب</button>
             </div>
           </div>
         </form>
@@ -98,12 +101,18 @@
     </div>
   </div>
 </div>
+<script>
+  function submitForm() {
+    document.getElementById('btn-submit').disabled = true;
+    document.getElementById('btn-submit').innerText = 'لطفا صبر کنید...';
+    document.getElementById('message').innerHTML = "<div class='toast toast-primary mb-2'>اسکریپت در حال نصب می باشد. عملیات نصب ممکن است چند دقیقه طول بکشد.</div>";
+    document.getElementById('form').submit();
+  }
+</script>
 </body>
 </html>
 
 <?php
-
-use ZipArchive;
 
 function install()
 {
@@ -122,26 +131,36 @@ function install()
         return;
     }
 
-    $file = file_get_contents('https://formpardakht.com/latest.zip', false);
+    $file = file_get_contents('http://formpardakht.com/latest.zip', false);
     file_put_contents(__DIR__ . '/latest.zip', $file);
     $zip = new ZipArchive;
     if ($zip->open(__DIR__ . '/latest.zip')) {
         $zip->extractTo(__DIR__);
         $zip->close();
     }
-    $env = file_get_contents(__DIR__ . '/core/.env.example');
-    $env = str_replace('{SITE_URL}', $input['site_url'], $env);
-    $env = str_replace('{DB_HOST}', $input['db_host'], $env);
-    $env = str_replace('{DB_NAME}', $input['db_name'], $env);
-    $env = str_replace('{DB_USERNAME}', $input['db_username'], $env);
-    $env = str_replace('{DB_PASSWORD}', $input['db_password'], $env);
+    $sampleConfig = require(__DIR__ . '/core/config-sample.php');
 
-    file_put_contents(__DIR__ . '/core/.env', $env);
+    foreach ($sampleConfig as $key => $value) {
+        $sampleConfig[$key] = '"' . $value . '",';
+    }
+    $sampleConfig['APP_URL'] = '"' . $input['site_url'] . '",';
+    $sampleConfig['DB_HOST'] = '"' . $input['db_host'] . '",';
+    $sampleConfig['DB_DATABASE'] = '"' . $input['db_name'] . '",';
+    $sampleConfig['DB_USERNAME'] = '"' . $input['db_username'] . '",';
+    $sampleConfig['DB_PASSWORD'] = '"' . $input['db_password'] . '",';
 
-    unlink(__DIR__ . '/latest.zip');
-    unlink(__DIR__ . '/install.css');
+    $config = print_r($sampleConfig, true);
+    $config = str_replace("[", '"', $config);
+    $config = str_replace("]", '"', $config);
+    file_put_contents(__DIR__ . '/core/config.php', '<?php return ' . $config . ';');
 
-    header('location: ./install/complete-ez?' . http_build_query($input));
+    if (file_exists(__DIR__ . '/core/.env')) {
+        unlink(__DIR__ . '/core/.env');
+    }
+
+    echo "<div class='toast toast-primary'>در حال هدایت به صفحه تکمیل نصب اسکریپت...</div>";
+    echo "<script>setTimeout(function() {window.location.href = './install/complete-ez?" . http_build_query($input) . "'}, 2000)</script>";
+    return;
 }
 
 function connectToDB($host, $username, $password, $database)
