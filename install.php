@@ -149,10 +149,11 @@ function install()
     $sampleConfig['DB_USERNAME'] = '"' . $input['db_username'] . '",';
     $sampleConfig['DB_PASSWORD'] = '"' . $input['db_password'] . '",';
 
-    $config = print_r($sampleConfig, true);
-    $config = str_replace("[", '"', $config);
-    $config = str_replace("]", '"', $config);
-    file_put_contents(__DIR__ . '/core/config.php', '<?php return ' . $config . ';');
+    $sampleConfig = print_r($sampleConfig, true);
+    $sampleConfig = str_replace("[", '"', $sampleConfig);
+    $sampleConfig = str_replace("]", '"', $sampleConfig);
+
+    file_put_contents(__DIR__ . '/core/config.php', '<?php return ' . $sampleConfig . ';');
 
     if (file_exists(__DIR__ . '/core/.env')) {
         unlink(__DIR__ . '/core/.env');
